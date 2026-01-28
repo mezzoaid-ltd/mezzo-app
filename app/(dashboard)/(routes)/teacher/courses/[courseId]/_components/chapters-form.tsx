@@ -80,10 +80,11 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
   const onEdit = (id: string) => {
     router.push(`/teacher/courses/${courseId}/chapters/${id}`);
   };
+
   return (
     <div className="relative mt-6 border bg-slate-100 rounded-md p-4 dark:bg-gray-800">
       {isUpdating && (
-        <div className="absolute h-full w-full bg-slate-500/20 top-0 right-0 rounded-m flex items-center justify-center">
+        <div className="absolute h-full w-full bg-slate-500/20 top-0 right-0 rounded-md flex items-center justify-center">
           <Loader2 className="animate-spin h-6 w-6 text-sky-700" />
         </div>
       )}
@@ -129,26 +130,21 @@ export const ChaptersForm = ({ initialData, courseId }: ChaptersFormProps) => {
         </Form>
       )}
       {!isCreating && (
-        <div
-          className={cn(
-            "text-sm mt-2",
-            !initialData.chapters.length && "text-slate-500 italic",
+        <>
+          {!initialData.chapters.length ? (
+            <p className="text-sm mt-2 text-slate-500 italic">No chapters</p>
+          ) : (
+            <ChaptersList
+              onEdit={onEdit}
+              onReorder={onReorder}
+              items={initialData.chapters}
+            />
           )}
-        >
-          {!initialData.chapters.length && "No chapters"}
-          <ChaptersList
-            onEdit={onEdit}
-            onReorder={onReorder}
-            items={initialData.chapters || []}
-          />
-        </div>
-      )}
-      {!isCreating && (
-        <p className="text-xs text-muted-foreground mt-4">
-          Drag and drop to reorder the chapters
-        </p>
+          <p className="text-xs text-muted-foreground mt-4">
+            Drag and drop to reorder the chapters
+          </p>
+        </>
       )}
     </div>
   );
 };
-export default ChaptersForm;

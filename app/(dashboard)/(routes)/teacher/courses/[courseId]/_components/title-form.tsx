@@ -24,7 +24,7 @@ interface TitleFormProps {
     title: string;
   };
   courseId: string;
-};
+}
 
 const formSchema = z.object({
   title: z.string().min(1, {
@@ -32,10 +32,7 @@ const formSchema = z.object({
   }),
 });
 
-export const TitleForm = ({
-  initialData,
-  courseId
-}: TitleFormProps) => {
+export const TitleForm = ({ initialData, courseId }: TitleFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const toggleEdit = () => setIsEditing((current) => !current);
@@ -55,19 +52,19 @@ export const TitleForm = ({
       toast.success("Course title updated");
       toggleEdit();
       router.refresh();
-    } catch (error : any) {
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          toast.error(`Server responded with ${error.response.status} error`);
-        } else if (error.request) {
-          // The request was made but no response was received
-          toast.error("No response received from server");
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          toast.error(`Error: ${error.message}`);
-        }
+    } catch (error: any) {
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        toast.error(`Server responded with ${error.response.status} error`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        toast.error("No response received from server");
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        toast.error(`Error: ${error.message}`);
       }
+    }
   };
 
   return (
@@ -86,9 +83,7 @@ export const TitleForm = ({
         </Button>
       </div>
       {!isEditing && (
-        <p className="text-sm mt-2 dark:text-gray-300">
-          {initialData?.title}
-        </p>
+        <p className="text-sm mt-2 dark:text-gray-300">{initialData?.title}</p>
       )}
       {isEditing && (
         <Form {...form}>
@@ -113,10 +108,7 @@ export const TitleForm = ({
               )}
             />
             <div className="flex items-center gap-x-2">
-              <Button
-                disabled={!isValid || isSubmitting}
-                type="submit"
-              >
+              <Button disabled={!isValid || isSubmitting} type="submit">
                 Save
               </Button>
             </div>
@@ -124,5 +116,5 @@ export const TitleForm = ({
         </Form>
       )}
     </div>
-  )
-}
+  );
+};
