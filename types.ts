@@ -17,4 +17,5 @@ export type CourseWithProgressWithCategory = Course & {
 };
 
 // Use Profile from current-profile
-export type { Profile as SafeProfile } from "@/lib/current-profile";
+// export type { Profile as SafeProfile } from "@/lib/current-profile";
+export type { SafeProfile, Profile } from "@/lib/current-profile";
