@@ -19,6 +19,11 @@ export interface Database {
           image_url: string | null;
           email: string;
           role: MemberRole;
+          bio: string | null;
+          title: string | null;
+          headline: string | null;
+          website_url: string | null;
+          social_links: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -29,6 +34,11 @@ export interface Database {
           image_url?: string | null;
           email: string;
           role?: MemberRole;
+          bio?: string | null;
+          title?: string | null;
+          headline?: string | null;
+          website_url?: string | null;
+          social_links?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -39,6 +49,11 @@ export interface Database {
           image_url?: string | null;
           email?: string;
           role?: MemberRole;
+          bio?: string | null;
+          title?: string | null;
+          headline?: string | null;
+          website_url?: string | null;
+          social_links?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -287,11 +302,26 @@ export interface Database {
           status_code?: number | null;
           error_message?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
       };
     };
     Views: {
-      [_ in never]: never;
+      instructor_stats: {
+        Row: {
+          instructor_id: string;
+          name: string;
+          email: string;
+          image_url: string | null;
+          bio: string | null;
+          title: string | null;
+          headline: string | null;
+          total_courses: number;
+          total_students: number;
+          average_price: number;
+          last_course_date: string | null;
+        };
+      };
     };
     Functions: {
       [_ in never]: never;
