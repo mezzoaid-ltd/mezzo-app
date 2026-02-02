@@ -8,11 +8,6 @@ import { CourseLanding } from "./_components/course-landing";
 type MuxDataRow = { playback_id: string | null };
 
 const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
-  // Validate courseId exists and isn't "undefined"
-  if (!params.courseId || params.courseId === "undefined") {
-    return redirect("/");
-  }
-
   const supabase = await createClient();
 
   const {

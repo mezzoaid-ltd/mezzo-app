@@ -262,6 +262,7 @@ export interface Database {
           course_id: string;
           created_at: string;
           updated_at: string;
+          last_viewed_chapter_id: string | null;
         };
         Insert: {
           id?: string;
@@ -269,6 +270,7 @@ export interface Database {
           course_id: string;
           created_at?: string;
           updated_at?: string;
+          last_viewed_chapter_id?: string | null;
         };
         Update: {
           id?: string;
@@ -276,6 +278,7 @@ export interface Database {
           course_id?: string;
           created_at?: string;
           updated_at?: string;
+          last_viewed_chapter_id?: string | null;
         };
       };
       stripe_customers: {
