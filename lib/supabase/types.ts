@@ -304,6 +304,32 @@ export interface Database {
           updated_at?: string;
         };
       };
+      certificates: {
+        Row: {
+          id: string;
+          user_id: string;
+          course_id: string;
+          verification_code: string;
+          issued_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          course_id: string;
+          verification_code?: string;
+          issued_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          course_id?: string;
+          verification_code?: string;
+          issued_at?: string;
+          created_at?: string;
+        };
+      };
       logging: {
         Row: {
           id: string;
