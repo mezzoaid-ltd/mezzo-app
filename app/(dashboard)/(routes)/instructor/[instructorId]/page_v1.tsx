@@ -11,6 +11,7 @@ import { Database } from "@/lib/supabase/types";
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Course = Database["public"]["Tables"]["courses"]["Row"];
 type Category = Database["public"]["Tables"]["categories"]["Row"];
+type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 
 interface InstructorPageProps {
   params: {
@@ -29,14 +30,16 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
     return redirect("/sign-in");
   }
 
-  // Get instructor profile
+  // Get instructor profile by user_id (params.instructorId is the user_id)
   const { data: instructor, error: instructorError } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", params.instructorId)
+    .eq("user_id", params.instructorId)
     .single();
+  //   .maybeSingle();
 
   if (instructorError || !instructor) {
+    console.error("[INSTRUCTOR_PAGE]", instructorError);
     return redirect("/search");
   }
 
@@ -48,7 +51,7 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
     return redirect("/search");
   }
 
-  // Get instructor's published courses
+  // Get instructor's published courses using user_id
   const { data: coursesData } = await supabase
     .from("courses")
     .select(
@@ -57,7 +60,7 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
       category:categories(*)
     `,
     )
-    .eq("user_id", params.instructorId)
+    .eq("user_id", params.instructorId) // Use the user_id from params
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
@@ -69,15 +72,19 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
   const totalCourses = courses.length;
 
   // Get total students (unique purchasers across all courses)
-  const { data: purchases } = await supabase
-    .from("purchases")
-    .select("user_id")
-    .in(
-      "course_id",
-      courses.map((c) => c.id),
-    );
-  // @ts-ignore
-  const uniqueStudents = new Set(purchases?.map((p) => p.user_id) || []).size;
+  const courseIds = courses.map((c) => c.id);
+
+  let uniqueStudents = 0;
+  if (courseIds.length > 0) {
+    const { data: purchases } = await supabase
+      .from("purchases")
+      .select("user_id")
+      .in("course_id", courseIds);
+
+    // Cast purchases to proper type
+    const purchasesData = (purchases || []) as Purchase[];
+    uniqueStudents = new Set(purchasesData.map((p) => p.user_id)).size;
+  }
 
   // Get courses with chapters for display - match CourseWithProgressWithCategory type
   const coursesWithChapters: CourseWithProgressWithCategory[] =

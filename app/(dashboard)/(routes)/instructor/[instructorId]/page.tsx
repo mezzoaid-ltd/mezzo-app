@@ -30,28 +30,25 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
     return redirect("/sign-in");
   }
 
-  // Get instructor profile by user_id (params.instructorId is the user_id)
+  // Get instructor profile
   const { data: instructor, error: instructorError } = await supabase
     .from("profiles")
     .select("*")
     .eq("user_id", params.instructorId)
     .single();
-  //   .maybeSingle();
 
   if (instructorError || !instructor) {
     console.error("[INSTRUCTOR_PAGE]", instructorError);
     return redirect("/search");
   }
 
-  // Cast instructor to proper type
   const instructorProfile = instructor as Profile;
 
-  // Check if instructor is actually a teacher or admin
   if (instructorProfile.role === "STUDENT") {
     return redirect("/search");
   }
 
-  // Get instructor's published courses using user_id
+  // Get instructor's published courses
   const { data: coursesData } = await supabase
     .from("courses")
     .select(
@@ -60,7 +57,7 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
       category:categories(*)
     `,
     )
-    .eq("user_id", params.instructorId) // Use the user_id from params
+    .eq("user_id", params.instructorId)
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
@@ -68,57 +65,89 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
     Course & { category: Category | null }
   >;
 
-  // Get statistics
   const totalCourses = courses.length;
 
-  // Get total students (unique purchasers across all courses)
-  const courseIds = courses.map((c) => c.id);
-
-  let uniqueStudents = 0;
-  if (courseIds.length > 0) {
-    const { data: purchases } = await supabase
-      .from("purchases")
-      .select("user_id")
-      .in("course_id", courseIds);
-
-    // Cast purchases to proper type
-    const purchasesData = (purchases || []) as Purchase[];
-    uniqueStudents = new Set(purchasesData.map((p) => p.user_id)).size;
+  if (courses.length === 0) {
+    // No courses, return early
+    return renderPage(instructorProfile, [], 0, 0, user);
   }
 
-  // Get courses with chapters for display - match CourseWithProgressWithCategory type
-  const coursesWithChapters: CourseWithProgressWithCategory[] =
-    await Promise.all(
-      courses.map(async (course) => {
-        const { data: chapters } = await supabase
-          .from("chapters")
-          .select("id")
-          .eq("course_id", course.id)
-          .eq("is_published", true);
+  const courseIds = courses.map((c) => c.id);
 
-        // Check if current user purchased
-        const { data: purchase } = await supabase
-          .from("purchases")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("course_id", course.id)
-          .maybeSingle();
+  // OPTIMIZATION 1: Batch fetch all purchases in ONE query
+  const { data: allPurchasesData } = await supabase
+    .from("purchases")
+    .select("user_id, course_id, id")
+    .in("course_id", courseIds);
 
-        return {
-          ...course,
-          chapters: chapters || [],
-          progress: purchase ? 0 : null,
-          instructor: {
-            id: instructorProfile.id,
-            name: instructorProfile.name,
-            title: instructorProfile.title,
-            image_url: instructorProfile.image_url,
-          },
-        };
-      }),
-    );
+  const allPurchases = (allPurchasesData || []) as Purchase[];
 
-  // Get initials
+  // Calculate unique students
+  const uniqueStudents = new Set(allPurchases.map((p) => p.user_id)).size;
+
+  // OPTIMIZATION 2: Batch fetch all chapters in ONE query
+  const { data: allChaptersData } = await supabase
+    .from("chapters")
+    .select("id, course_id")
+    .in("course_id", courseIds)
+    .eq("is_published", true);
+
+  const allChapters = (allChaptersData || []) as unknown as Array<{
+    id: string;
+    course_id: string;
+  }>;
+
+  // Group chapters by course_id
+  const chaptersByCourse = new Map<string, { id: string }[]>();
+  for (const chapter of allChapters) {
+    if (!chaptersByCourse.has(chapter.course_id)) {
+      chaptersByCourse.set(chapter.course_id, []);
+    }
+    chaptersByCourse.get(chapter.course_id)!.push({ id: chapter.id });
+  }
+
+  // OPTIMIZATION 3: Filter purchases for current user
+  const userPurchasedCourseIds = new Set(
+    allPurchases.filter((p) => p.user_id === user.id).map((p) => p.course_id),
+  );
+
+  // Map courses with their chapters and purchase status (all in memory, no more queries!)
+  const coursesWithChapters: CourseWithProgressWithCategory[] = courses.map(
+    (course) => {
+      const chapters = chaptersByCourse.get(course.id) || [];
+      const hasPurchased = userPurchasedCourseIds.has(course.id);
+
+      return {
+        ...course,
+        chapters,
+        progress: hasPurchased ? 0 : null,
+        instructor: {
+          id: instructorProfile.id,
+          name: instructorProfile.name,
+          title: instructorProfile.title,
+          image_url: instructorProfile.image_url,
+        },
+      };
+    },
+  );
+
+  return renderPage(
+    instructorProfile,
+    coursesWithChapters,
+    totalCourses,
+    uniqueStudents,
+    user,
+  );
+};
+
+// Extracted render logic to reduce duplication
+function renderPage(
+  instructorProfile: Profile,
+  coursesWithChapters: CourseWithProgressWithCategory[],
+  totalCourses: number,
+  uniqueStudents: number,
+  user: { id: string },
+) {
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -128,7 +157,6 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
       .slice(0, 2);
   };
 
-  // Parse social links
   const socialLinks =
     typeof instructorProfile.social_links === "object" &&
     instructorProfile.social_links
@@ -335,6 +363,23 @@ const InstructorPage = async ({ params }: InstructorPageProps) => {
       </div>
     </div>
   );
-};
+}
 
 export default InstructorPage;
+
+// BEFORE OPTIMIZATION: For 10 courses
+// - 1 query: Get instructor profile
+// - 1 query: Get courses
+// - 1 query: Get all purchases (for unique students)
+// - 10 queries: Get chapters (one per course)
+// - 10 queries: Check user purchases (one per course)
+// = 23 queries total
+
+// AFTER OPTIMIZATION: For 10 courses
+// - 1 query: Get instructor profile
+// - 1 query: Get courses
+// - 1 query: Get all purchases (for unique students + user purchases)
+// - 1 query: Get all chapters (batched)
+// = 4 queries total
+//
+// 83% reduction in database queries! 🚀
