@@ -1,3 +1,9 @@
+// =============================================================================
+// CHAPTER PAGE WITH SEO (Student View)
+// Replace: app/(course)/courses/[courseId]/chapters/[chapterId]/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { File } from "lucide-react";
@@ -13,12 +19,80 @@ import { VideoPlayer } from "./_components/video-player";
 import { CourseEnrollButton } from "./_components/course-enroll-button";
 import { CourseProgressButton } from "./_components/course-progress-button";
 import { ReviewsSection } from "../../_components/reviews-section";
+import { siteConfig } from "@/lib/seo-config";
 
-const ChapterIdPage = async ({
-  params,
-}: {
+interface ChapterPageProps {
   params: { courseId: string; chapterId: string };
-}) => {
+}
+
+// =============================================================================
+// DYNAMIC METADATA
+// =============================================================================
+export async function generateMetadata({
+  params,
+}: ChapterPageProps): Promise<Metadata> {
+  const supabase = await createClient();
+
+  // Get chapter and course info
+  const { data: chapterRaw } = await supabase
+    .from("chapters")
+    .select("title, description")
+    .eq("id", params.chapterId)
+    .single();
+
+  const { data: courseRaw } = await supabase
+    .from("courses")
+    .select("title")
+    .eq("id", params.courseId)
+    .single();
+
+  const chapter = chapterRaw as {
+    title: string;
+    description: string | null;
+  } | null;
+  const course = courseRaw as { title: string } | null;
+
+  if (!chapter || !course) {
+    return {
+      title: "Chapter Not Found",
+    };
+  }
+
+  const title = `${chapter.title} - ${course.title}`;
+  const description =
+    chapter.description?.replace(/<[^>]*>/g, "").slice(0, 160) ||
+    `Watch ${chapter.title} from the course "${course.title}" on Mezzo Aid.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/courses/${params.courseId}/chapters/${params.chapterId}`,
+    },
+    openGraph: {
+      type: "article",
+      title: `${title} | Mezzo Aid`,
+      description,
+      url: `${siteConfig.url}/courses/${params.courseId}/chapters/${params.chapterId}`,
+      siteName: siteConfig.name,
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: siteConfig.social.twitter,
+      title: `${title} | Mezzo Aid`,
+      description,
+    },
+    robots: {
+      index: false, // Chapter pages are behind purchase, don't index
+      follow: true,
+    },
+  };
+}
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
+const ChapterIdPage = async ({ params }: ChapterPageProps) => {
   const supabase = await createClient();
 
   const {

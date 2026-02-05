@@ -1,3 +1,9 @@
+// =============================================================================
+// TEACHER ANALYTICS PAGE WITH SEO
+// Replace: app/(dashboard)/(routes)/teacher/analytics/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
@@ -14,6 +20,22 @@ import { DataCard } from "./_components/data-card";
 import { Chart } from "./_components/chart";
 import { EnrollmentChart } from "./_components/enrollment-chart";
 
+// =============================================================================
+// STATIC METADATA (Private page - noindex)
+// =============================================================================
+export const metadata: Metadata = {
+  title: "Analytics",
+  description:
+    "View your course analytics, revenue, and student enrollment statistics on Mezzo Aid.",
+  robots: {
+    index: false, // Private teacher page
+    follow: false,
+  },
+};
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
 const AnalyticsPage = async () => {
   const supabase = await createClient();
 

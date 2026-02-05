@@ -1,7 +1,12 @@
+// =============================================================================
+// USER PROFILE EDIT PAGE WITH SEO
+// Replace: app/(dashboard)/(routes)/teacher/users/[id]/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ImageForm } from "./_components/image-form";
 import { MemberRoleForm } from "./_components/member-role-form";
 import { Database } from "@/lib/supabase/types";
 
@@ -13,6 +18,21 @@ interface ProfileIdPageProps {
   };
 }
 
+// =============================================================================
+// STATIC METADATA (Private admin page - noindex)
+// =============================================================================
+export const metadata: Metadata = {
+  title: "Edit User",
+  description: "Edit user profile and role settings.",
+  robots: {
+    index: false, // Private admin page
+    follow: false,
+  },
+};
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
 const ProfileIdPage: React.FC<ProfileIdPageProps> = async ({ params }) => {
   const { id } = params;
   const supabase = await createClient();

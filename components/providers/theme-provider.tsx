@@ -19,6 +19,7 @@ export default function ThemeContextProvider({
   children,
 }: ThemeContextProviderProps) {
   const [theme, setTheme] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
 
   const toggleTheme = () => {
     if (theme === "light") {
@@ -33,6 +34,8 @@ export default function ThemeContextProvider({
   };
 
   useEffect(() => {
+    setMounted(true);
+
     const localTheme = window.localStorage.getItem("theme") as Theme | null;
 
     if (localTheme) {
@@ -46,6 +49,11 @@ export default function ThemeContextProvider({
       document.documentElement.classList.add("dark");
     }
   }, []);
+
+  // Prevent flash by not rendering children until mounted
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <ThemeContext.Provider

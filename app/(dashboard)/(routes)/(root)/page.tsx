@@ -1,3 +1,9 @@
+// =============================================================================
+// STUDENT DASHBOARD WITH SEO
+// Replace: app/(dashboard)/(routes)/(root)/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CheckCircle, Clock, BookOpen, Target } from "lucide-react";
@@ -11,6 +17,22 @@ import { BannerCard } from "./_components/banner-card";
 import { ProgressRing } from "./_components/progress-ring";
 import { RecentActivity } from "./_components/recent-activity";
 
+// =============================================================================
+// STATIC METADATA (Dashboard is private, doesn't need dynamic metadata)
+// =============================================================================
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description:
+    "Track your learning progress, view enrolled courses, and continue your entrepreneurship journey on Mezzo Aid.",
+  robots: {
+    index: false, // Dashboard is private, don't index
+    follow: false,
+  },
+};
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
 export default async function Dashboard() {
   const supabase = await createClient();
 

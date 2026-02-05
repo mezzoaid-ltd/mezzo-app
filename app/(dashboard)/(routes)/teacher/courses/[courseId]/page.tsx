@@ -1,3 +1,9 @@
+// =============================================================================
+// COURSE EDIT PAGE WITH SEO (Teacher)
+// Replace: app/(dashboard)/(routes)/teacher/courses/[courseId]/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -25,7 +31,38 @@ type Chapter = Database["public"]["Tables"]["chapters"]["Row"];
 type Attachment = Database["public"]["Tables"]["attachments"]["Row"];
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 
-const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
+interface CourseIdPageProps {
+  params: { courseId: string };
+}
+
+// =============================================================================
+// DYNAMIC METADATA (Private teacher page - noindex)
+// =============================================================================
+export async function generateMetadata({
+  params,
+}: CourseIdPageProps): Promise<Metadata> {
+  const supabase = await createClient();
+
+  const { data: course } = await supabase
+    .from("courses")
+    .select("title")
+    .eq("id", params.courseId)
+    .single<{ title: string }>();
+
+  return {
+    title: course ? `Edit: ${course.title}` : "Edit Course",
+    description: "Edit your course details, chapters, and settings.",
+    robots: {
+      index: false, // Private teacher page
+      follow: false,
+    },
+  };
+}
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
+const CourseIdPage = async ({ params }: CourseIdPageProps) => {
   const supabase = await createClient();
 
   const {
@@ -120,7 +157,7 @@ const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-y-2">
             <h1 className="text-2xl font-medium">Course setup</h1>
-            <span className="text-sm text-slate-700">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               Complete all fields {completionText}
             </span>
           </div>

@@ -35,8 +35,9 @@ export const CourseCard = ({
   instructor,
 }: CourseCardProps) => {
   return (
-    <Link href={`/courses/${id}`}>
-      <div className="group hover:shadow-sm transition overflow-hidden border rounded-lg p-3 h-full dark:border-gray-700 dark:bg-gray-800">
+    <div className="group hover:shadow-sm transition overflow-hidden border rounded-lg p-3 h-full dark:border-gray-700 dark:bg-gray-800">
+      {/* Image Link */}
+      <Link href={`/courses/${id}`}>
         <div className="relative w-full aspect-video rounded-md overflow-hidden">
           <Image
             fill
@@ -45,50 +46,54 @@ export const CourseCard = ({
             src={imageUrl}
           />
         </div>
-        <div className="flex flex-col pt-2">
+      </Link>
+
+      <div className="flex flex-col pt-2">
+        {/* Title Link */}
+        <Link href={`/courses/${id}`}>
           <div className="text-lg md:text-base font-medium group-hover:text-sky-700 dark:group-hover:text-sky-400 transition line-clamp-2 dark:text-white min-h-[3rem]">
             {title}
           </div>
+        </Link>
 
-          {/* Instructor Info */}
-          {instructor && (
-            <div className="my-3" onClick={(e) => e.stopPropagation()}>
-              <InstructorCard
-                instructorId={instructor.id}
-                name={instructor.name}
-                title={instructor.title}
-                imageUrl={instructor.image_url}
-                compact
-              />
-            </div>
-          )}
-
-          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
-            {category}
-          </p>
-
-          <div className="my-3 flex items-center gap-x-2 text-sm md:text-xs">
-            <div className="flex items-center gap-x-1 text-slate-500 dark:text-gray-400">
-              <IconBadge size="sm" icon={BookOpen} />
-              <span>
-                {chaptersLength} {chaptersLength === 1 ? "Chapter" : "Chapters"}
-              </span>
-            </div>
-          </div>
-
-          {progress !== null ? (
-            <CourseProgress
-              variant={progress === 100 ? "success" : "default"}
-              size="sm"
-              value={progress}
+        {/* Instructor Info - Separate Link (No nesting) */}
+        {instructor && (
+          <div className="my-3">
+            <InstructorCard
+              instructorId={instructor.id}
+              name={instructor.name}
+              title={instructor.title}
+              imageUrl={instructor.image_url}
+              compact
             />
-          ) : (
-            <p className="text-md md:text-sm font-medium text-slate-700 dark:text-gray-300">
-              {formatPrice(price)}
-            </p>
-          )}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
+          {category}
+        </p>
+
+        <div className="my-3 flex items-center gap-x-2 text-sm md:text-xs">
+          <div className="flex items-center gap-x-1 text-slate-500 dark:text-gray-400">
+            <IconBadge size="sm" icon={BookOpen} />
+            <span>
+              {chaptersLength} {chaptersLength === 1 ? "Chapter" : "Chapters"}
+            </span>
+          </div>
         </div>
+
+        {progress !== null ? (
+          <CourseProgress
+            variant={progress === 100 ? "success" : "default"}
+            size="sm"
+            value={progress}
+          />
+        ) : (
+          <p className="text-md md:text-sm font-medium text-slate-700 dark:text-gray-300">
+            {formatPrice(price)}
+          </p>
+        )}
       </div>
-    </Link>
+    </div>
   );
 };

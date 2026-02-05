@@ -4,6 +4,7 @@ import { File } from "lucide-react";
 
 import { getChapter } from "@/actions/get-chapter";
 import { getCourseReviews } from "@/actions/get-course-reviews";
+import { trackLastViewed } from "@/actions/track-last-viewed";
 import { Banner } from "@/components/banner";
 import { Separator } from "@/components/ui/separator";
 import { Preview } from "@/components/preview";
@@ -48,6 +49,11 @@ const ChapterIdPage = async ({
 
   const isLocked = !chapter.is_free && !purchase;
   const completeOnEnd = !!purchase && !userProgress?.is_completed;
+
+  // Track last viewed chapter (fire and forget - don't await)
+  if (purchase) {
+    trackLastViewed(user.id, params.courseId, params.chapterId);
+  }
 
   // Fetch reviews data if user has purchased
   const reviewsData = purchase

@@ -1,3 +1,9 @@
+// =============================================================================
+// CHAPTER EDIT PAGE WITH SEO (Teacher)
+// Replace: app/(dashboard)/(routes)/teacher/courses/[courseId]/chapters/[chapterId]/page.tsx
+// =============================================================================
+
+import { Metadata } from "next";
 import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +28,33 @@ interface ChapterIdPageProps {
   };
 }
 
+// =============================================================================
+// DYNAMIC METADATA (Private teacher page - noindex)
+// =============================================================================
+export async function generateMetadata({
+  params,
+}: ChapterIdPageProps): Promise<Metadata> {
+  const supabase = await createClient();
+
+  const { data: chapter } = await supabase
+    .from("chapters")
+    .select("title")
+    .eq("id", params.chapterId)
+    .single<{ title: string }>();
+
+  return {
+    title: chapter ? `Edit: ${chapter.title}` : "Edit Chapter",
+    description: "Edit your chapter content, video, and settings.",
+    robots: {
+      index: false, // Private teacher page
+      follow: false,
+    },
+  };
+}
+
+// =============================================================================
+// PAGE COMPONENT
+// =============================================================================
 const ChapterIdPage: React.FC<ChapterIdPageProps> = async ({ params }) => {
   const { courseId, chapterId } = params;
   const supabase = await createClient();
@@ -107,7 +140,7 @@ const ChapterIdPage: React.FC<ChapterIdPageProps> = async ({ params }) => {
                 <h1 className="text-2xl font-medium">Chapter Creation</h1>
               </div>
             </div>
-            <span className="text-sm text-slate-700 dark:text-slate-300 ">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               Complete all fields {completionText}
             </span>
           </div>

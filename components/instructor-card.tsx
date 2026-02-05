@@ -39,7 +39,6 @@ export const InstructorCard = ({
       <Link
         href={`/instructor/${instructorId}`}
         className="flex items-center gap-2 hover:opacity-75 transition group"
-        onClick={(e) => e.stopPropagation()}
       >
         <Avatar className="h-6 w-6 border border-gray-200 dark:border-gray-700">
           <AvatarImage src={imageUrl || undefined} alt={name} />
