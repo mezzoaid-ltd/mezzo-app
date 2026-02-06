@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const publicRoutes = [
   "/sign-in",
   "/sign-up",
+  "/auth/callback", // ✅ Allow auth callback
   "/api/webhook",
   "/api/uploadthing",
 ];
@@ -72,33 +73,66 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Get user session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // ✅ ADD: Handle refresh token errors gracefully
+  try {
+    // Get user session
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  // Redirect to sign-in if not authenticated
-  if (!user) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(signInUrl);
-  }
+    // ✅ If refresh token is invalid, clear cookies and redirect to sign-in
+    if (
+      error?.message?.includes("refresh_token_not_found") ||
+      error?.message?.includes("Invalid Refresh Token")
+    ) {
+      const signInUrl = new URL("/sign-in", request.url);
+      const redirectResponse = NextResponse.redirect(signInUrl);
 
-  // Check teacher routes
-  if (teacherRoutes.some((route) => pathname.startsWith(route))) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
+      // Clear all auth cookies
+      redirectResponse.cookies.delete("sb-access-token");
+      redirectResponse.cookies.delete("sb-refresh-token");
 
-    if (!profile || (profile.role !== "TEACHER" && profile.role !== "ADMIN")) {
-      // Redirect non-teachers away from teacher routes
-      return NextResponse.redirect(new URL("/", request.url));
+      return redirectResponse;
     }
-  }
 
-  return response;
+    // Redirect to sign-in if not authenticated
+    if (!user) {
+      const signInUrl = new URL("/sign-in", request.url);
+      signInUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Check teacher routes
+    if (teacherRoutes.some((route) => pathname.startsWith(route))) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      if (
+        !profile ||
+        (profile.role !== "TEACHER" && profile.role !== "ADMIN")
+      ) {
+        // Redirect non-teachers away from teacher routes
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
+
+    return response;
+  } catch (err) {
+    // ✅ Catch any unexpected auth errors
+    console.error("[MIDDLEWARE] Auth error:", err);
+
+    // Clear cookies and redirect to sign-in
+    const signInUrl = new URL("/sign-in", request.url);
+    const redirectResponse = NextResponse.redirect(signInUrl);
+    redirectResponse.cookies.delete("sb-access-token");
+    redirectResponse.cookies.delete("sb-refresh-token");
+
+    return redirectResponse;
+  }
 }
 
 export const config = {
