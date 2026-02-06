@@ -86,6 +86,77 @@ export const generateCertificate = async (
       return null;
     }
 
+    // ✅ SEND CERTIFICATE EMAIL - Fire and forget
+    try {
+      // Get user profile
+      const { data: profileRaw } = await supabase
+        .from("profiles")
+        .select("name, email")
+        .eq("user_id", userId)
+        .single();
+
+      if (!profileRaw) {
+        console.error("[CERTIFICATE_EMAIL] Profile not found");
+        return newCert as unknown as Certificate;
+      }
+
+      const profile = profileRaw as { name: string; email: string };
+
+      // Get course with instructor
+      const { data: courseRaw } = await supabase
+        .from("courses")
+        .select(
+          `
+          title,
+          user_id
+        `,
+        )
+        .eq("id", courseId)
+        .single();
+
+      if (!courseRaw) {
+        console.error("[CERTIFICATE_EMAIL] Course not found");
+        return newCert as unknown as Certificate;
+      }
+
+      const course = courseRaw as { title: string; user_id: string };
+
+      // Get instructor name
+      const { data: instructorRaw } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", course.user_id)
+        .single();
+
+      const instructor = instructorRaw as { name: string } | null;
+
+      // Send certificate email
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        "https://mezzo-app-service.onrender.com";
+      fetch(`${API_BASE_URL}/api/v1/emails/lms/certificate-earned`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: profile.email,
+          userName: profile.name,
+          courseName: course.title,
+          verificationCode: verificationCode,
+          completionDate: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          certificateUrl: `https://app.mezzoaid.com/api/courses/${courseId}/certificate`,
+          instructorName: instructor?.name,
+          totalChapters: chapters.length,
+        }),
+      }).catch((err) => console.error("[CERTIFICATE_EMAIL] Failed:", err));
+    } catch (emailError) {
+      console.error("[CERTIFICATE_EMAIL] Error:", emailError);
+      // Don't block certificate generation if email fails
+    }
+
     return newCert as unknown as Certificate;
   } catch (error) {
     console.error("[GENERATE_CERTIFICATE]", error);

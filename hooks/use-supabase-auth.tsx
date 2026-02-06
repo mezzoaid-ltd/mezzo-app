@@ -160,6 +160,24 @@ export function useSupabaseAuth() {
 
     if (error) {
       console.error("[useSupabaseAuth] Sign up error:", error);
+    } else if (data.user) {
+      // ✅ SEND WELCOME EMAIL - Fire and forget (don't block signup)
+      try {
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_BACKEND_URL ||
+          "https://mezzo-app-service.onrender.com";
+        fetch(`${API_BASE_URL}/api/v1/emails/lms/welcome`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email,
+            userName: name,
+          }),
+        }).catch((err) => console.error("[WELCOME_EMAIL] Failed:", err));
+      } catch (emailError) {
+        console.error("[WELCOME_EMAIL] Error:", emailError);
+        // Don't block signup if email fails
+      }
     }
 
     return { data, error };

@@ -105,6 +105,77 @@ export async function POST(
       return new NextResponse("Internal Error", { status: 500 });
     }
 
+    // ✅ SEND NEW REVIEW EMAIL TO INSTRUCTOR - Fire and forget
+    try {
+      // Get course with instructor info
+      const { data: courseRaw } = await supabase
+        .from("courses")
+        .select("title, user_id")
+        .eq("id", params.courseId)
+        .single();
+
+      if (!courseRaw) {
+        console.error("[NEW_REVIEW_EMAIL] Course not found");
+        return NextResponse.json(review);
+      }
+
+      const course = courseRaw as { title: string; user_id: string };
+
+      // Get instructor profile
+      const { data: instructorRaw } = await supabase
+        .from("profiles")
+        .select("name, email")
+        .eq("user_id", course.user_id)
+        .single();
+
+      if (!instructorRaw) {
+        console.error("[NEW_REVIEW_EMAIL] Instructor profile not found");
+        return NextResponse.json(review);
+      }
+
+      const instructor = instructorRaw as { name: string; email: string };
+
+      // Get reviewer profile
+      const { data: reviewerRaw } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!reviewerRaw) {
+        console.error("[NEW_REVIEW_EMAIL] Reviewer profile not found");
+        return NextResponse.json(review);
+      }
+
+      const reviewer = reviewerRaw as { name: string };
+
+      // Send email to instructor
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        "https://mezzo-app-service.onrender.com";
+      fetch(`${API_BASE_URL}/api/v1/emails/lms/new-review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: instructor.email,
+          instructorName: instructor.name,
+          courseName: course.title,
+          courseUrl: `https://app.mezzoaid.com/courses/${params.courseId}`,
+          reviewerName: reviewer.name,
+          rating: rating,
+          reviewComment: comment || "",
+          reviewDate: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        }),
+      }).catch((err) => console.error("[NEW_REVIEW_EMAIL] Failed:", err));
+    } catch (emailError) {
+      console.error("[NEW_REVIEW_EMAIL] Error:", emailError);
+      // Don't block review creation if email fails
+    }
+
     return NextResponse.json(review);
   } catch (error) {
     console.log("[REVIEW_POST]", error);
