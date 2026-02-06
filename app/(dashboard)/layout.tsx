@@ -12,7 +12,7 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="h-full dark:bg-gray-900">
-      <div className="h-[80px] md:pl-56 fixed inset-y-0 w-full z-[999] dark:bg-gray-900">
+      <div className="h-[80px] md:pl-56 fixed inset-y-0 w-full z-[99] dark:bg-gray-900">
         <Navbar currentProfile={profile} />
       </div>
 
